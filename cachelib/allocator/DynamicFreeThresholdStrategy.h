@@ -35,7 +35,7 @@ public:
   DynamicFreeThresholdStrategy(double lowEvictionAcWatermark, double highEvictionAcWatermark, uint64_t maxEvictionBatch, uint64_t minEvictionBatch);
   ~DynamicFreeThresholdStrategy() {}
 
-  size_t calculateBatchSizes(const CacheBase& cache, std::vector<std::tuple<TierId, PoolId, ClassId>> acVec);
+  std::vector<size_t> calculateBatchSizes(const CacheBase& cache, std::vector<std::tuple<TierId, PoolId, ClassId>> acVec);
                                        //unsigned int tid,
                                        //PoolId pid,
                                        //ClassId cid,

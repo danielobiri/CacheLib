@@ -61,10 +61,10 @@ DynamicFreeThresholdStrategy::DynamicFreeThresholdStrategy(double lowEvictionAcW
         }
       }
 
-size_t DynamicFreeThresholdStrategy::calculateBatchSizes(const CacheBase& cache, std::vector<std::tuple<TierId, PoolId, ClassId>> acVec) {
+std::vector<size_t> DynamicFreeThresholdStrategy::calculateBatchSizes(const CacheBase& cache, std::vector<std::tuple<TierId, PoolId, ClassId>> acVec) {
   
   std::vector<size_t> batches{};
-  
+
   for (auto [tid, pid, cid] : acVec) {
     auto stats = cache.getAllocationClassStats(tid, pid, cid);
     auto acFree = stats.approxFreePercent;
