@@ -167,7 +167,7 @@ std::shared_ptr<BackgroundEvictorStrategy> CacheConfig::getBackgroundEvictorStra
     return nullptr;
   }
 
-  return std::make_shared<DynamicFreeThresholdStrategy>(lowEvictionAcWatermark, highEvictionAcWatermark, evictionHotnessThreshold);
+  return std::make_shared<DynamicFreeThresholdStrategy>(lowEvictionAcWatermark, highEvictionAcWatermark);
 }
 
 std::shared_ptr<BackgroundEvictorStrategy> CacheConfig::getBackgroundPromoterStrategy() const {

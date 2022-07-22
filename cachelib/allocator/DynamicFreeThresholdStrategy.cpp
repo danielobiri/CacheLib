@@ -27,6 +27,8 @@
 #include "cachelib/allocator/DynamicFreeThresholdStrategy.h"
 #include "cachelib/allocator/Cache.h"
 #include "cachelib/allocator/CacheStats.h"
+#include "cachelib/allocator/memory/MemoryPoolManager.h"
+#include "cachelib/allocator/memory/MemoryAllocator.h"
 #include <vector>
 #include <tuple>
 #include <folly/logging/xlog.h>
@@ -36,11 +38,11 @@ namespace cachelib {
 
 
 
-DynamicFreeThresholdStrategy::DynamicFreeThresholdStrategy(double lowEvictionAcWatermark, double highEvictionAcWatermark, uint64_t evictionHotnessThreshold)
-    : lowEvictionAcWatermark(lowEvictionAcWatermark), highEvictionAcWatermark(highEvictionAcWatermark), evictionHotnessThreshold(evictionHotnessThreshold) {
-        auto numTiers = getNumTiers();
-        auto numPools = getPoolIds().size();
-        auto numClasses = getClassIds().size;
+DynamicFreeThresholdStrategy::DynamicFreeThresholdStrategy(double lowEvictionAcWatermark, double highEvictionAcWatermark)
+    : lowEvictionAcWatermark(lowEvictionAcWatermark), highEvictionAcWatermark(highEvictionAcWatermark) {
+        auto numTiers = kMaxTiers;
+        auto numPools = MemoryPoolManager::kMaxPools;
+        auto numClasses = MemoryAllocator::kMaxClasses;
         for (int i = 0; i < numTiers; i++) {
           std::vector<std::vector<std::tuple<double, double, double>>> poolHighThresholds;
           std::vector<std::vector<std::tuple<double, double>>> poolBenefits;
