@@ -50,7 +50,7 @@ private:
   uint64_t maxEvictionBatch{0};
   uint64_t minEvictionBatch{0};
   //double toFreeMemPercent{0.0}; //Q: What happens to this value when the background thread is not activated in a certain period in Class x? Should we set it to 0?
-  std::vector<std::vector<std::vector<std::tuple<double, double>>>> acToFreeMemPercents;
+  std::vector<std::vector<std::vector<std::tuple<double, double>>>> acToFreeMemPercents; //logging toFreeMemPercents for comparison
   double highEvictionDelta{1.0}; //TODO: tune this param, experiment with multiple values, (maybe base it on access freq or other access stat), perhaps use the benefit function to adjust this param (binned)?
   std::vector<std::vector<std::vector<std::tuple<double, double, double>>>> highEvictionAcWatermarks;
   //individual thresholds for each class, adjusted internally within this class
@@ -58,7 +58,7 @@ private:
   //index 1 for i-1 window
   //index 2 for i-2 window
 
-  //std::array<std::array<std::array<MemoryAllocator::kMaxClasses>, MemoryPoolManager::kMaxPools>, CacheBase::kMaxTiers> highEvictionAcWatermarks; //change structure, but use this for dimensions
+  //std::array<std::array<std::array<MemoryAllocator::kMaxClasses>, MemoryPoolManager::kMaxPools>, CacheBase::kMaxTiers> highEvictionAcWatermarks; //use array instead w these dimensions
 
   std::vector<std::vector<std::vector<std::tuple<double, double>>>> acBenefits;
   //index 0 for current benefit (i-th window)

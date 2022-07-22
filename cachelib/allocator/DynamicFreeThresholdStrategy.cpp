@@ -46,18 +46,23 @@ DynamicFreeThresholdStrategy::DynamicFreeThresholdStrategy(double lowEvictionAcW
         for (int i = 0; i < numTiers; i++) {
           std::vector<std::vector<std::tuple<double, double, double>>> poolHighThresholds;
           std::vector<std::vector<std::tuple<double, double>>> poolBenefits;
+          std::vector<std::vector<std::tuple<double, double>>> poolToFreeMemPercents;
           for (int j = 0; j < numPools; j++) {
             std::vector<std::tuple<double, double, double>> classHighThresholds;
             std::vector<std::tuple<double, double>> classBenefits;
+            std::vector<std::tuple<double, double>> classToFreeMemPercents;
             for (int k = 0; k < numClasses; k++) {
                 classHighThresholds.push_back(std::make_tuple(highEvictionAcWatermark, highEvictionAcWatermark, highEvictionAcWatermark));
                 classBenefits.push_back(std::make_tuple(0.0, 0.0));
+                classToFreeMemPercents.push_back(std::make_tuple(0.0, 0.0));
             }
             poolHighThresholds.push_back(classHighThresholds);
             poolBenefits.push_back(classBenefits);
+            poolToFreeMemPercents.push_back(classToFreeMemPercents);
           }
           highEvictionAcWatermarks.push_back(poolHighThresholds);
           acBenefits.push_back(poolBenefits);
+          acToFreeMemPercents.push_back(poolToFreeMemPercents);
         }
       }
 
