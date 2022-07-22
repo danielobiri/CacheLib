@@ -143,5 +143,9 @@ void DynamicFreeThresholdStrategy::calculateBenefitMig(uint64_t acLatency, unsig
     std::get<0>(acBenefits[tid][pid][cid]) = 1 / acLatency;
 }
 
+BackgroundStrategyStats DynamicFreeThresholdStrategy::getStats() { 
+    return NULL;
+}
+
 } // namespace cachelib
 } // namespace facebook
