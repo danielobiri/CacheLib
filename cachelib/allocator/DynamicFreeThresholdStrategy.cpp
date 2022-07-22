@@ -69,16 +69,17 @@ std::vector<size_t> DynamicFreeThresholdStrategy::calculateBatchSizes(const Cach
     auto stats = cache.getAllocationClassStats(tid, pid, cid);
     auto acFree = stats.approxFreePercent;
     auto acHighThresholdAtI = std::get<0>(highEvictionAcWatermarks[tid][pid][cid]);
-    auto acHighThresholdAtIMinus1 = std::get<1>(highEvictionAcWatermarks[tid][pid][cid]);
-    auto acHighThresholdAtIMinus2 = std::get<2>(highEvictionAcWatermarks[tid][pid][cid]);
-    auto acHighThresholdAtINew = std::get<0>(highEvictionAcWatermarks[tid][pid][cid]);
-    auto toFreeMemPercentAtIMinus1 = std::get<1>(acToFreeMemPercents[tid][pid][cid]);
 
-    if (stats.approxFreePercent >= acHighThresholdAtI) {
+    if (acFree >= acHighThresholdAtI) {
       batches.push_back(0);
     } else {
-      uint64_t p99 = 1; //to be changed
-      calculateBenefitMig(p99, tid, pid, cid);
+      auto acHighThresholdAtIMinus1 = std::get<1>(highEvictionAcWatermarks[tid][pid][cid]);
+      auto acHighThresholdAtIMinus2 = std::get<2>(highEvictionAcWatermarks[tid][pid][cid]);
+      auto acHighThresholdAtINew = std::get<0>(highEvictionAcWatermarks[tid][pid][cid]);
+      auto toFreeMemPercentAtIMinus1 = std::get<1>(acToFreeMemPercents[tid][pid][cid]);
+      auto acAllocLatencyNs = cache.getAllocationClassStats(tid, pid, cid).allocLatencyNs.estimate();
+      
+      calculateBenefitMig(acAllocLatencyNs, tid, pid, cid);
 
       if (toFreeMemPercentAtIMinus1 < acFree / 2) {
         acHighThresholdAtINew =- highEvictionDelta;
@@ -136,10 +137,10 @@ std::vector<size_t> DynamicFreeThresholdStrategy::calculateBatchSizes(const Cach
   return batches;
 }
 
-void DynamicFreeThresholdStrategy::calculateBenefitMig(uint64_t p99, unsigned int tid, PoolId pid, ClassId cid) {
+void DynamicFreeThresholdStrategy::calculateBenefitMig(uint64_t acLatency, unsigned int tid, PoolId pid, ClassId cid) {
     auto currentBenefit = std::get<0>(acBenefits[tid][pid][cid]);
     std::get<1>(acBenefits[tid][pid][cid]) = currentBenefit;
-    std::get<0>(acBenefits[tid][pid][cid]) = 1 / p99;
+    std::get<0>(acBenefits[tid][pid][cid]) = 1 / acLatency;
 }
 
 } // namespace cachelib

@@ -21,6 +21,8 @@
 #include "cachelib/allocator/Cache.h"
 #include "cachelib/allocator/BackgroundEvictorStrategy.h"
 #include "cachelib/allocator/CacheStats.h"
+#include "cachelib/allocator/memory/MemoryPoolManager.h"
+#include "cachelib/allocator/memory/MemoryAllocator.h"
 #include <vector>
 #include <tuple>
 
@@ -53,6 +55,8 @@ private:
   //index 0 for i-th window
   //index 1 for i-1 window
   //index 2 for i-2 window
+
+  //std::array<std::array<std::array<MemoryAllocator::kMaxClasses>, MemoryPoolManager::kMaxPools>, CacheBase::kMaxTiers> highEvictionAcWatermarks; //change structure, but use this for dimensions
 
   std::vector<std::vector<std::vector<std::tuple<double, double>>>> acBenefits;
   //index 0 for current benefit (i-th window)
