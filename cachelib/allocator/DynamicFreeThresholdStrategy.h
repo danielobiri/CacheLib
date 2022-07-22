@@ -47,6 +47,8 @@ public:
 private:
   double lowEvictionAcWatermark{2.0}; //this threshold is used outside this class and is not adjusted currently
   double highEvictionAcWatermark{5.0}; //this threshold is adjusted internally within this class
+  uint64_t maxEvictionBatch{0};
+  uint64_t minEvictionBatch{0};
   //double toFreeMemPercent{0.0}; //Q: What happens to this value when the background thread is not activated in a certain period in Class x? Should we set it to 0?
   std::vector<std::vector<std::vector<std::tuple<double, double>>>> acToFreeMemPercents;
   double highEvictionDelta{1.0}; //TODO: tune this param, experiment with multiple values, (maybe base it on access freq or other access stat), perhaps use the benefit function to adjust this param (binned)?

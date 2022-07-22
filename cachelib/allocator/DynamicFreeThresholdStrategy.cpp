@@ -40,7 +40,7 @@ namespace cachelib {
 
 DynamicFreeThresholdStrategy::DynamicFreeThresholdStrategy(double lowEvictionAcWatermark, double highEvictionAcWatermark, uint64_t maxEvictionBatch, uint64_t minEvictionBatch)
     : lowEvictionAcWatermark(lowEvictionAcWatermark), highEvictionAcWatermark(highEvictionAcWatermark), maxEvictionBatch(maxEvictionBatch), minEvictionBatch(minEvictionBatch) {
-        auto numTiers = kMaxTiers;
+        auto numTiers = CacheBase::kMaxTiers;
         auto numPools = MemoryPoolManager::kMaxPools;
         auto numClasses = MemoryAllocator::kMaxClasses;
         for (int i = 0; i < numTiers; i++) {
