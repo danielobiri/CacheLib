@@ -32,19 +32,21 @@ namespace cachelib {
 class DynamicFreeThresholdStrategy : public BackgroundEvictorStrategy {
 
 public:
-  DynamicFreeThresholdStrategy(double lowEvictionAcWatermark, double highEvictionAcWatermark);
+  DynamicFreeThresholdStrategy(double lowEvictionAcWatermark, double highEvictionAcWatermark, uint64_t maxEvictionBatch, uint64_t minEvictionBatch);
   ~DynamicFreeThresholdStrategy() {}
 
-  size_t calculateBatchSize(const CacheBase& cache,
-                                       unsigned int tid,
-                                       PoolId pid,
-                                       ClassId cid,
-                                       size_t allocSize,
-                                       size_t acMemorySize);
+  size_t calculateBatchSizes(const CacheBase& cache, std::vector<std::tuple<TierId, PoolId, ClassId>> acVec);
+                                       //unsigned int tid,
+                                       //PoolId pid,
+                                       //ClassId cid,
+                                       //size_t allocSize,
+                                       //size_t acMemorySize);
+
 private:
   double lowEvictionAcWatermark{2.0}; //this threshold is used outside this class and is not adjusted currently
   double highEvictionAcWatermark{5.0}; //this threshold is adjusted internally within this class
-  double toFreeMemPercent{0.0}; //Q: What happens to this value when the background thread is not activated in a certain period in Class x? Should we set it to 0?
+  //double toFreeMemPercent{0.0}; //Q: What happens to this value when the background thread is not activated in a certain period in Class x? Should we set it to 0?
+  std::vector<std::vector<std::vector<std::tuple<double, double>>>> acToFreeMemPercents;
   double highEvictionDelta{1.0}; //TODO: tune this param, experiment with multiple values, (maybe base it on access freq or other access stat), perhaps use the benefit function to adjust this param (binned)?
   std::vector<std::vector<std::vector<std::tuple<double, double, double>>>> highEvictionAcWatermarks;
   //individual thresholds for each class, adjusted internally within this class

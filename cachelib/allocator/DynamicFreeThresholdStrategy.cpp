@@ -38,8 +38,8 @@ namespace cachelib {
 
 
 
-DynamicFreeThresholdStrategy::DynamicFreeThresholdStrategy(double lowEvictionAcWatermark, double highEvictionAcWatermark)
-    : lowEvictionAcWatermark(lowEvictionAcWatermark), highEvictionAcWatermark(highEvictionAcWatermark) {
+DynamicFreeThresholdStrategy::DynamicFreeThresholdStrategy(double lowEvictionAcWatermark, double highEvictionAcWatermark, uint64_t maxEvictionBatch, uint64_t minEvictionBatch)
+    : lowEvictionAcWatermark(lowEvictionAcWatermark), highEvictionAcWatermark(highEvictionAcWatermark), maxEvictionBatch(maxEvictionBatch), minEvictionBatch(minEvictionBatch) {
         auto numTiers = kMaxTiers;
         auto numPools = MemoryPoolManager::kMaxPools;
         auto numClasses = MemoryAllocator::kMaxClasses;
@@ -61,58 +61,79 @@ DynamicFreeThresholdStrategy::DynamicFreeThresholdStrategy(double lowEvictionAcW
         }
       }
 
-size_t DynamicFreeThresholdStrategy::calculateBatchSize(const CacheBase& cache,
-                                       unsigned int tid,
-                                       PoolId pid,
-                                       ClassId cid,
-                                       size_t allocSize,
-                                       size_t acMemorySize) {
+size_t DynamicFreeThresholdStrategy::calculateBatchSizes(const CacheBase& cache, std::vector<std::tuple<TierId, PoolId, ClassId>> acVec) {
+  
+  std::vector<size_t> batches{};
+  
+  for (auto [tid, pid, cid] : acVec) {
+    auto stats = cache.getAllocationClassStats(tid, pid, cid);
+    auto acFree = stats.approxFreePercent;
+    auto acHighThresholdAtI = std::get<0>(highEvictionAcWatermarks[tid][pid][cid]);
+    auto acHighThresholdAtIMinus1 = std::get<1>(highEvictionAcWatermarks[tid][pid][cid]);
+    auto acHighThresholdAtIMinus2 = std::get<2>(highEvictionAcWatermarks[tid][pid][cid]);
+    auto acHighThresholdAtINew = std::get<0>(highEvictionAcWatermarks[tid][pid][cid]);
+    auto toFreeMemPercentAtIMinus1 = std::get<1>(acToFreeMemPercents[tid][pid][cid]);
 
-  auto acFree = cache.acFreePercentage(tid, pid, cid);
-  auto acHighThresholdAtI = std::get<0>(highEvictionAcWatermarks[tid][pid][cid]);
-  auto acHighThresholdAtIMinus1 = std::get<1>(highEvictionAcWatermarks[tid][pid][cid]);
-  auto acHighThresholdAtIMinus2 = std::get<2>(highEvictionAcWatermarks[tid][pid][cid]);
-  auto acHighThresholdAtINew = std::get<0>(highEvictionAcWatermarks[tid][pid][cid]);
+    if (stats.approxFreePercent >= acHighThresholdAtI) {
+      batches.push_back(0);
+    } else {
+      uint64_t p99 = 1; //to be changed
+      calculateBenefitMig(p99, tid, pid, cid);
 
-  if (acFree >= acHighThresholdAtI)
-    return 0;
+      if (toFreeMemPercentAtIMinus1 < acFree / 2) {
+        acHighThresholdAtINew =- highEvictionDelta;
+      } else {
+        if (std::get<0>(acBenefits[tid][pid][cid]) > std::get<1>(acBenefits[tid][pid][cid])) {
+          if (acHighThresholdAtIMinus1 > acHighThresholdAtIMinus2) {
+            acHighThresholdAtINew += highEvictionDelta;
+          } else {
+            acHighThresholdAtINew -= highEvictionDelta;
+          }
+        } else {
+          if (acHighThresholdAtIMinus1 < acHighThresholdAtIMinus2) {
+          acHighThresholdAtINew += highEvictionDelta;
+          } else {
+            acHighThresholdAtINew -= highEvictionDelta;
+          }
+        }
+      }
+      
+      auto toFreeMemPercent = acHighThresholdAtINew - acFree;
+      std::get<1>(acToFreeMemPercents[tid][pid][cid]) = toFreeMemPercent;
+      auto toFreeItems = static_cast<size_t>(toFreeMemPercent * stats.memorySize / stats.allocSize);
+      batches.push_back(toFreeItems);
+
+      std::get<0>(highEvictionAcWatermarks[tid][pid][cid]) = acHighThresholdAtINew;
+      std::get<1>(highEvictionAcWatermarks[tid][pid][cid]) = acHighThresholdAtI;
+      std::get<2>(highEvictionAcWatermarks[tid][pid][cid]) = acHighThresholdAtIMinus1;
+    }
+  }
 
   //TODO: add class-based allocation latency for highEvictionWatermark
   //TODO: add class-based read latency for lowEvictionWatermark
   //auto latencies = cache.getAllocationLatency();
 
-  uint64_t p99 = 1;
-  //uint64_t p99 = latencies.back(); //is p99 for now, should change to class-level latency value (e.g. rolling avg)
-  //if (p99 == 0) {
-      //p99 = 1;
-  //}
-  calculateBenefitMig(p99, tid, pid, cid);
-
-  if (toFreeMemPercent < acFree / 2) {
-    acHighThresholdAtINew =- highEvictionDelta;
-  } else {
-    if (std::get<0>(acBenefits[tid][pid][cid]) > std::get<1>(acBenefits[tid][pid][cid])) {
-      if (acHighThresholdAtIMinus1 > acHighThresholdAtIMinus2) {
-        acHighThresholdAtINew += highEvictionDelta;
-      } else {
-        acHighThresholdAtINew -= highEvictionDelta;
-      }
-    } else {
-      if (acHighThresholdAtIMinus1 < acHighThresholdAtIMinus2) {
-        acHighThresholdAtINew += highEvictionDelta;
-      } else {
-        acHighThresholdAtINew -= highEvictionDelta;
-      }
-    }
+  if (batches.size() == 0) {
+    return batches;
   }
-  toFreeMemPercent = acHighThresholdAtINew - acFree;
-  auto toFreeItems = static_cast<size_t>(toFreeMemPercent * acMemorySize / allocSize);
 
-  std::get<0>(highEvictionAcWatermarks[tid][pid][cid]) = acHighThresholdAtINew;
-  std::get<1>(highEvictionAcWatermarks[tid][pid][cid]) = acHighThresholdAtI;
-  std::get<2>(highEvictionAcWatermarks[tid][pid][cid]) = acHighThresholdAtIMinus1;
+  auto maxBatch = *std::max_element(batches.begin(), batches.end());
+  if (maxBatch == 0)
+    return batches;
 
-  return toFreeItems;
+  std::transform(batches.begin(), batches.end(), batches.begin(), [&](auto numItems){
+    if (numItems == 0) {
+      return 0UL;
+    }
+
+    auto cappedBatchSize = maxEvictionBatch * numItems / maxBatch;
+    if (cappedBatchSize < minEvictionBatch)
+      return minEvictionBatch;
+    else
+      return cappedBatchSize;
+  });
+
+  return batches;
 }
 
 void DynamicFreeThresholdStrategy::calculateBenefitMig(uint64_t p99, unsigned int tid, PoolId pid, ClassId cid) {
