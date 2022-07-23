@@ -52,7 +52,6 @@ struct BackgroundEvictorStats {
   // item eviction size
   AtomicCounter evictionSize{0};
 
-  BackgroundStrategyStats bss;
 };
 
 // Periodic worker that evicts items from tiers in batches

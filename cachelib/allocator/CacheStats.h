@@ -28,6 +28,8 @@
 #include "cachelib/common/RollingStats.h"
 #include "cachelib/common/Time.h"
 
+//#include "cachelib/allocator/BackgroundEvictorStrategy.h"
+
 namespace facebook {
 namespace cachelib {
 
@@ -300,6 +302,26 @@ struct ReaperStats {
   uint64_t avgTraversalTimeMs{0};
 };
 
+struct BackgroundStrategyStats {
+  
+    std::map<uint32_t,double> highEvictionAcWatermarks;
+  
+    BackgroundStrategyStats& operator+=(const BackgroundStrategyStats& rhs){
+        for (const auto entry : rhs.highEvictionAcWatermarks) {
+            auto cid = entry.first;
+            auto count = entry.second;
+            auto it = highEvictionAcWatermarks.find(cid);
+            if ( it != highEvictionAcWatermarks.end() ) {
+                it->second += count;
+            } else {
+                highEvictionAcWatermarks[cid] = count;
+            }
+        }
+        return *this;
+    }
+
+};
+
 // Eviction Stats
 struct BackgroundEvictionStats {
   // the number of items this worker evicted by looking at pools/classes stats
@@ -314,11 +336,14 @@ struct BackgroundEvictionStats {
   // eviction size
   uint64_t evictionSize{0};
 
+  BackgroundStrategyStats strategyStats;
+
   BackgroundEvictionStats& operator+=(const BackgroundEvictionStats& rhs) {
     numEvictedItems += rhs.numEvictedItems;
     runCount += rhs.runCount;
     totalClasses += rhs.totalClasses;
     evictionSize += rhs.evictionSize;
+    strategyStats += rhs.strategyStats;
     return *this;
   }
 };
