@@ -310,12 +310,7 @@ struct BackgroundStrategyStats {
         for (const auto entry : rhs.highEvictionAcWatermarks) {
             auto cid = entry.first;
             auto count = entry.second;
-            auto it = highEvictionAcWatermarks.find(cid);
-            if ( it != highEvictionAcWatermarks.end() ) {
-                it->second += count;
-            } else {
-                highEvictionAcWatermarks[cid] = count;
-            }
+            highEvictionAcWatermarks[cid] = count;
         }
         return *this;
     }
