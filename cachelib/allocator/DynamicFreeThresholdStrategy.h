@@ -38,11 +38,8 @@ public:
   ~DynamicFreeThresholdStrategy() {}
 
   std::vector<size_t> calculateBatchSizes(const CacheBase& cache, std::vector<std::tuple<TierId, PoolId, ClassId>> acVec);
-                                       //unsigned int tid,
-                                       //PoolId pid,
-                                       //ClassId cid,
-                                       //size_t allocSize,
-                                       //size_t acMemorySize);
+
+  BackgroundStrategyStats getStats();
 
 private:
   double lowEvictionAcWatermark{2.0}; //this threshold is used outside this class and is not adjusted currently

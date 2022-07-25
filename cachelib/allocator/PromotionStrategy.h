@@ -71,6 +71,11 @@ public:
 
     return batches;
   }
+
+  BackgroundStrategyStats getStats() { 
+    BackgroundStrategyStats s;
+    return s;
+  }
 private:
   double promotionAcWatermark{4.0};
   uint64_t maxPromotionBatch{40};

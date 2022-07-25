@@ -614,6 +614,7 @@ Stats Cache<Allocator>::getStats() const {
     ret.nvmCounters = cache_->getNvmCacheStatsMap();
   }
 
+  ret.acHighWatermarks = cacheStats.evictionStats.strategyStats.highEvictionAcWatermarks;
   ret.backgroundEvictionClasses = cache_->getBackgroundEvictorClassStats();
   ret.backgroundPromotionClasses = cache_->getBackgroundPromoterClassStats();
 

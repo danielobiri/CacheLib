@@ -103,7 +103,7 @@ BackgroundEvictionStats BackgroundEvictor<CacheT>::getStats() const noexcept {
   evicStats.runCount = stats.numTraversals.get();
   evicStats.evictionSize = stats.evictionSize.get();
   evicStats.totalClasses = stats.totalClasses.get();
-
+  evicStats.strategyStats = strategy_->getStats();
   return evicStats;
 }
 

@@ -63,5 +63,10 @@ std::vector<size_t> FreeThresholdStrategy::calculateBatchSizes(
   return batches;
 }
 
+BackgroundStrategyStats FreeThresholdStrategy::getStats() { 
+  BackgroundStrategyStats s;
+  return s;
+}
+
 } // namespace cachelib
 } // namespace facebook

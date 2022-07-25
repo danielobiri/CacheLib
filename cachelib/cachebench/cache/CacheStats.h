@@ -135,6 +135,8 @@ struct Stats {
   std::map<uint32_t, uint64_t> backgroundEvictionClasses;
   std::map<uint32_t, uint64_t> backgroundPromotionClasses;
 
+  std::map<uint32_t, double> acHighWatermarks;
+  
   // errors from the nvm engine.
   std::unordered_map<std::string, double> nvmErrors;
 
@@ -190,13 +192,13 @@ struct Stats {
 
       foreachAC([&](auto tid, auto pid, auto cid, auto stats){
         auto [allocSizeSuffix, allocSize] = formatMemory(stats.allocSize);
-        out << folly::sformat("tid{:2} pid{:2} cid{:4} {:8.2f}{} free: {:4.2f}%",
+        out << folly::sformat("tid{:2} pid{:2} cid{:4} {:8}{} free: {:4.2f}%",
           tid, pid, cid, allocSize, allocSizeSuffix, stats.approxFreePercent) << std::endl;
       });
 
       foreachAC([&](auto tid, auto pid, auto cid, auto stats){
         auto [allocSizeSuffix, allocSize] = formatMemory(stats.allocSize);
-        out << folly::sformat("tid{:2} pid{:2} cid{:4} {:8.2f}{} latency: {:8.2f}%",
+        out << folly::sformat("tid{:2} pid{:2} cid{:4} {:8}{} latency: {:8}",
           tid, pid, cid, allocSize, allocSizeSuffix, stats.allocLatencyNs.estimate()) << std::endl;
       });
     }
@@ -376,6 +378,13 @@ struct Stats {
     if (!backgroundEvictionClasses.empty() && backgndEvicStats.nEvictedItems > 0 ) {
       out << "== Class Background Eviction Counters Map ==" << std::endl;
       for (const auto& it : backgroundEvictionClasses) {
+        out << it.first << "  :  " << it.second << std::endl;
+      }
+    }
+    
+    if (!acHighWatermarks.empty() && backgndEvicStats.nEvictedItems > 0 ) {
+      out << "== Class High Threshold ==" << std::endl;
+      for (const auto& it : acHighWatermarks) {
         out << it.first << "  :  " << it.second << std::endl;
       }
     }

@@ -32,6 +32,8 @@ public:
 
   std::vector<size_t> calculateBatchSizes(const CacheBase& cache,
                             std::vector<std::tuple<TierId, PoolId, ClassId>> acVecs);
+
+  BackgroundStrategyStats getStats(); 
 private:
   double lowEvictionAcWatermark{2.0}; 
   double highEvictionAcWatermark{5.0};
