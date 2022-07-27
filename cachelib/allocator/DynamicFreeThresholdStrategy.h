@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-  //class-specific dynamic free high threshold strategy
+  //class-specific dynamic free (high) threshold strategy
 
 #pragma once
 
@@ -32,11 +32,9 @@ class DynamicFreeThresholdStrategy : public BackgroundEvictorStrategy {
 
 public:
   DynamicFreeThresholdStrategy(double lowEvictionAcWatermark, double highEvictionAcWatermark, uint64_t maxEvictionBatch, uint64_t minEvictionBatch);
-  //std::vector<std::vector<std::vector<std::vector<double>>>> highEvictionAcWatermarks, std::vector<std::vector<std::vector<std::vector<double>>>> acBenefits, 
-  //std::vector<std::vector<std::vector<std::vector<double>>>> acToFreeMemPercents);
   ~DynamicFreeThresholdStrategy() {}
 
-  std::vector<size_t> calculateBatchSizes(const CacheBase& cache, std::vector<std::tuple<TierId, PoolId, ClassId>> acVec);
+  std::vector<size_t> calculateBatchSizes(const CacheBase& cache, std::vector<std::tuple<TierId, PoolId, ClassId>> acVecs);
 
   BackgroundStrategyStats getStats();
 
@@ -59,21 +57,6 @@ private:
   std::vector<std::vector<std::vector<std::vector<double>>>> acToFreeMemPercents; //logging toFreeMemPercents for comparison
   //index 0 for current toFreeMemPercent (i-th window)
   //index 1 for previous toFreeMemPercent (i-1 window)
-
-  //CacheBase::kMaxTiers, 
-  //std::vector<std::vector<std::vector<double>>>(MemoryPoolManager::kMaxPools, 
-  //std::vector<std::vector<double>>(MemoryAllocator::kMaxClasses, 
-  //std::vector<double>(3, 5.0)));
-
-  //CacheBase::kMaxTiers, 
-  //std::vector<std::vector<std::vector<double>>>(MemoryPoolManager::kMaxPools, 
-  //std::vector<std::vector<double>>(MemoryAllocator::kMaxClasses, 
-  //std::vector<double>(2, 0.0)));
-
-  //CacheBase::kMaxTiers, 
-  //std::vector<std::vector<std::vector<double>>>(MemoryPoolManager::kMaxPools, 
-  //std::vector<std::vector<double>>(MemoryAllocator::kMaxClasses, 
-  //std::vector<double>(2, 0.0)));
 
 private:
   void calculateBenefitMig(uint64_t p99, unsigned int tid, PoolId pid, ClassId cid);
