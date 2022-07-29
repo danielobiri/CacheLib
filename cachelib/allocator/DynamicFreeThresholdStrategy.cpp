@@ -49,12 +49,11 @@ std::vector<size_t> DynamicFreeThresholdStrategy::calculateBatchSizes(const Cach
   std::vector<size_t> batches{};
 
   for (auto [tid, pid, cid] : acVec) {
-    XLOGF(INFO, "Tid: {}, Pid: {}, Cid: {}", tid, pid, cid);
 
     auto stats = cache.getAllocationClassStats(tid, pid, cid);
     auto acFree = stats.approxFreePercent;
 
-    if (acFree >= lowEvictionAcWatermark) { //before: (acFree >= acHighThresholdAtI)
+    if (acFree >= lowEvictionAcWatermark) {
       batches.push_back(0);
     } else {
       auto acHighThresholdAtI = highEvictionAcWatermarks[tid][pid][cid][0];
@@ -84,7 +83,7 @@ std::vector<size_t> DynamicFreeThresholdStrategy::calculateBatchSizes(const Cach
         }
       }
 
-      acHighThresholdAtINew = std::max(acHighThresholdAtINew, acFree);
+      acHighThresholdAtINew = std::max(acHighThresholdAtINew, lowEvictionAcWatermark); //std::max(acHighThresholdAtINew, acFree)
       auto toFreeMemPercent = acHighThresholdAtINew - acFree;
       acToFreeMemPercents[tid][pid][cid][1] = toFreeMemPercent;
       auto toFreeItems = static_cast<size_t>(toFreeMemPercent * stats.memorySize / stats.allocSize);
@@ -98,26 +97,6 @@ std::vector<size_t> DynamicFreeThresholdStrategy::calculateBatchSizes(const Cach
 
   if (batches.size() == 0) {
     return batches;
-  }
-
-  auto maxBatch = *std::max_element(batches.begin(), batches.end());
-  if (maxBatch == 0)
-    return batches;
-
-  std::transform(batches.begin(), batches.end(), batches.begin(), [&](auto numItems){
-    if (numItems == 0) {
-      return 0UL;
-    }
-
-    auto cappedBatchSize = maxEvictionBatch * numItems / maxBatch;
-    if (cappedBatchSize < minEvictionBatch)
-      return minEvictionBatch;
-    else
-      return cappedBatchSize;
-  });
-
-  for (int i = 0; i < batches.size(); ++i) {
-    XLOGF(INFO, "Tid, Pid, Cid index{}: {}", i, batches.at(i));
   }
   
   return batches;
