@@ -36,7 +36,7 @@ public:
   BackgroundStrategyStats getStats(); 
 private:
   double lowEvictionAcWatermark{2.0}; 
-  double highEvictionAcWatermark{5.0};
+  double highEvictionAcWatermark{2.0};
   uint64_t maxEvictionBatch{40};
   uint64_t minEvictionBatch{5};
 };
