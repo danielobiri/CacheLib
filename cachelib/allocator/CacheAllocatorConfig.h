@@ -622,7 +622,7 @@ class CacheAllocatorConfig {
 
   double promotionAcWatermark{4.0};
   double lowEvictionAcWatermark{2.0};
-  double highEvictionAcWatermark{5.0};
+  double highEvictionAcWatermark{2.0};
   double minAcAllocationWatermark{0.0};
   double maxAcAllocationWatermark{0.0};
   double acTopTierEvictionWatermark{0.0}; // TODO: make it per TIER?
