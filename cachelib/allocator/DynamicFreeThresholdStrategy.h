@@ -39,7 +39,7 @@ public:
   BackgroundStrategyStats getStats();
 
 private:
-  double lowEvictionAcWatermark{3.0}; //for now: static threshold to trigger eviction
+  double lowEvictionAcWatermark{2.0}; //for now: static threshold to trigger eviction
   double highEvictionAcWatermark{5.0}; //this threshold is adjusted internally, individually for each ac class, determines the number of items to evict
   uint64_t maxEvictionBatch{0}; //not used
   uint64_t minEvictionBatch{0}; //not used
