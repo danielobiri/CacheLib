@@ -34,7 +34,7 @@ DynamicFreeThresholdStrategy::DynamicFreeThresholdStrategy(double lowEvictionAcW
     highEvictionAcWatermarks(CacheBase::kMaxTiers, 
                                 std::vector<std::vector<std::vector<double>>>(MemoryPoolManager::kMaxPools,
                                 std::vector<std::vector<double>>(MemoryAllocator::kMaxClasses,
-                                std::vector<double>(3, 5.0)))),
+                                std::vector<double>(3, highEvictionAcWatermark)))),
     acBenefits(CacheBase::kMaxTiers, 
                   std::vector<std::vector<std::vector<double>>>(MemoryPoolManager::kMaxPools,
                   std::vector<std::vector<double>>(MemoryAllocator::kMaxClasses,
