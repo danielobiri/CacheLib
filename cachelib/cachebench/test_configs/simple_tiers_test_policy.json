@@ -17,7 +17,10 @@
     ],
     "backgroundEvictorIntervalMilSec": 10,
     "backgroundPromoterIntervalMilSec": 0,
-    "backgroundManagerIntervalSec": 10,
+    "backgroundEvictorStrategy": "",
+    "highEvictionDelta": 0.1,
+    "lowEvictionAcWatermark": 1,
+    "highEvictionAcWatermark": 3,
     "promoterThreads": 0,
     "evictorThreads": 2
 

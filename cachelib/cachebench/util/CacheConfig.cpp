@@ -21,6 +21,7 @@
 #include "cachelib/allocator/RandomStrategy.h"
 
 #include "cachelib/allocator/FreeThresholdStrategy.h"
+#include "cachelib/allocator/DynamicFreeThresholdStrategy.h"
 #include "cachelib/allocator/PromotionStrategy.h"
 
 namespace facebook {
@@ -101,6 +102,7 @@ CacheConfig::CacheConfig(const folly::dynamic& configJson) {
   JSONSetVal(configJson, enableItemDestructor);
 
   JSONSetVal(configJson, disableEvictionToMemory);
+  JSONSetVal(configJson, highEvictionDelta);
   JSONSetVal(configJson, lowEvictionAcWatermark);
   JSONSetVal(configJson, highEvictionAcWatermark);
   JSONSetVal(configJson, minAcAllocationWatermark);
@@ -132,7 +134,7 @@ CacheConfig::CacheConfig(const folly::dynamic& configJson) {
   // if you added new fields to the configuration, update the JSONSetVal
   // to make them available for the json configs and increment the size
   // below
-  checkCorrectSize<CacheConfig, 944>();
+  checkCorrectSize<CacheConfig, 952>();
 
   if (numPools != poolSizes.size()) {
     throw std::invalid_argument(folly::sformat(
@@ -166,8 +168,11 @@ std::shared_ptr<BackgroundEvictorStrategy> CacheConfig::getBackgroundEvictorStra
   if (backgroundEvictorIntervalMilSec == 0) {
     return nullptr;
   }
-
-  return std::make_shared<FreeThresholdStrategy>(lowEvictionAcWatermark, highEvictionAcWatermark, maxEvictionBatch, minEvictionBatch);
+  if (backgroundEvictorStrategy == "dynamic") {
+    return std::make_shared<DynamicFreeThresholdStrategy>(lowEvictionAcWatermark, highEvictionAcWatermark, maxEvictionBatch, minEvictionBatch, highEvictionDelta);
+  } else {
+    return std::make_shared<FreeThresholdStrategy>(lowEvictionAcWatermark, highEvictionAcWatermark, maxEvictionBatch, minEvictionBatch);
+  }
 }
 
 std::shared_ptr<BackgroundEvictorStrategy> CacheConfig::getBackgroundPromoterStrategy() const {

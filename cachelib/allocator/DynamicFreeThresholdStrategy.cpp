@@ -29,8 +29,8 @@ namespace cachelib {
 
 
 
-DynamicFreeThresholdStrategy::DynamicFreeThresholdStrategy(double lowEvictionAcWatermark, double highEvictionAcWatermark, uint64_t maxEvictionBatch, uint64_t minEvictionBatch)
-    : lowEvictionAcWatermark(lowEvictionAcWatermark), highEvictionAcWatermark(highEvictionAcWatermark), maxEvictionBatch(maxEvictionBatch), minEvictionBatch(minEvictionBatch), 
+DynamicFreeThresholdStrategy::DynamicFreeThresholdStrategy(double lowEvictionAcWatermark, double highEvictionAcWatermark, uint64_t maxEvictionBatch, uint64_t minEvictionBatch, double highEvictionDelt )
+    : lowEvictionAcWatermark(lowEvictionAcWatermark), highEvictionAcWatermark(highEvictionAcWatermark), maxEvictionBatch(maxEvictionBatch), minEvictionBatch(minEvictionBatch), highEvictionDelta(highEvictionDelt), 
     highEvictionAcWatermarks(CacheBase::kMaxTiers, 
                                 std::vector<std::vector<std::vector<double>>>(MemoryPoolManager::kMaxPools,
                                 std::vector<std::vector<double>>(MemoryAllocator::kMaxClasses,
@@ -98,7 +98,21 @@ std::vector<size_t> DynamicFreeThresholdStrategy::calculateBatchSizes(const Cach
   if (batches.size() == 0) {
     return batches;
   }
-  
+  auto maxBatch = *std::max_element(batches.begin(), batches.end());
+  if (maxBatch == 0)
+    return batches;
+
+  std::transform(batches.begin(), batches.end(), batches.begin(), [&](auto numItems){
+    if (numItems == 0) {
+      return 0UL;
+    }
+
+    auto cappedBatchSize = maxEvictionBatch * numItems / maxBatch;
+    if (cappedBatchSize < minEvictionBatch)
+      return minEvictionBatch;
+    else
+      return cappedBatchSize;
+  });
   return batches;
 }
 

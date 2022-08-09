@@ -293,6 +293,7 @@ struct CacheConfig : public JSONConfig {
 
   bool disableEvictionToMemory{false};
 
+  double highEvictionDelta{0.5}; 
   double promotionAcWatermark{4.0};
   double lowEvictionAcWatermark{2.0};
   double highEvictionAcWatermark{5.0};

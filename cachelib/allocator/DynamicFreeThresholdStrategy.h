@@ -31,7 +31,7 @@ namespace cachelib {
 class DynamicFreeThresholdStrategy : public BackgroundEvictorStrategy {
 
 public:
-  DynamicFreeThresholdStrategy(double lowEvictionAcWatermark, double highEvictionAcWatermark, uint64_t maxEvictionBatch, uint64_t minEvictionBatch);
+  DynamicFreeThresholdStrategy(double lowEvictionAcWatermark, double highEvictionAcWatermark, uint64_t maxEvictionBatch, uint64_t minEvictionBatch, double highEvictionDelta);
   ~DynamicFreeThresholdStrategy() {}
 
   std::vector<size_t> calculateBatchSizes(const CacheBase& cache, std::vector<std::tuple<TierId, PoolId, ClassId>> acVecs);
