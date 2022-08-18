@@ -34,32 +34,35 @@ public:
   DynamicFreeThresholdStrategy(double lowEvictionAcWatermark, double highEvictionAcWatermark, uint64_t maxEvictionBatch, uint64_t minEvictionBatch, double highEvictionDelta);
   ~DynamicFreeThresholdStrategy() {}
 
-  std::vector<size_t> calculateBatchSizes(const CacheBase& cache, std::vector<std::tuple<TierId, PoolId, ClassId>> acVecs);
+  std::vector<size_t> calculateBatchSizes(const CacheBase& cache, std::vector<std::tuple<TierId, PoolId, ClassId>> acVecs); //function to calculate number of items to evict for alloc. classes in the batch
 
   BackgroundStrategyStats getStats();
 
 private:
-  double lowEvictionAcWatermark{2.0}; //for now: static threshold to trigger eviction
-  double highEvictionAcWatermark{5.0}; //this threshold is adjusted internally, individually for each ac class, determines the number of items to evict
-  uint64_t maxEvictionBatch{0}; //not used
-  uint64_t minEvictionBatch{0}; //not used
-  double highEvictionDelta{0.5}; //TODO: tune this param, experiment with multiple values, (maybe base it on access freq or other access stat), perhaps use the benefit function to adjust this param (binned)?
+  double lowEvictionAcWatermark{2.0}; //threshold to activate eviction in a certain alloc. class
+                                      //for now: static threshold, same for all alloc. classes, TODO: implement dynamic low threshold
+  double highEvictionAcWatermark{5.0}; //threshold to calculate number of items to evict from a certain alloc. class
+                                       //this threshold is adjusted internally, individually for each ac class
+  uint64_t maxEvictionBatch{0};
+  uint64_t minEvictionBatch{0};
+  double highEvictionDelta{0.5}; //step size of hill-climbing algorithm
+                                 //TODO: tune this param, use access freq or other access stat as basis, perhaps use the benefit function to adjust this param (binned)?
 
   std::vector<std::vector<std::vector<std::vector<double>>>> highEvictionAcWatermarks; //individual dynamic thresholds for each ac class
   //index 0 for i-th window
   //index 1 for i-1 window
   //index 2 for i-2 window
 
-  std::vector<std::vector<std::vector<std::vector<double>>>> acBenefits;
+  std::vector<std::vector<std::vector<std::vector<double>>>> acBenefits; //benefit value for each ac class, for now: derived from moving avg alloc. latency
   //index 0 for current benefit (i-th window)
   //index 1 for previous benefit (i-1 window)
   
-  std::vector<std::vector<std::vector<std::vector<double>>>> acToFreeMemPercents; //logging toFreeMemPercents for comparison
+  std::vector<std::vector<std::vector<std::vector<double>>>> acToFreeMemPercents; //amount of memory to free up for each ac class (logging it for comparison purposes)
   //index 0 for current toFreeMemPercent (i-th window)
   //index 1 for previous toFreeMemPercent (i-1 window)
 
 private:
-  void calculateBenefitMig(uint64_t p99, unsigned int tid, PoolId pid, ClassId cid);
+  void calculateBenefitMig(uint64_t p99, unsigned int tid, PoolId pid, ClassId cid); //function to calculate the benefit of eviction for a certain ac class
 
 };
 
