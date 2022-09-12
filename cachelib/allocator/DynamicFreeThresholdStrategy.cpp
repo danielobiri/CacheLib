@@ -23,10 +23,12 @@
 #include "cachelib/allocator/Cache.h"
 #include "cachelib/allocator/CacheStats.h"
 #include <folly/logging/xlog.h>
+#include <fstream>
 
 namespace facebook {
 namespace cachelib {
 
+int i = 0;
 
 
 DynamicFreeThresholdStrategy::DynamicFreeThresholdStrategy(double lowEvictionAcWatermark, double highEvictionAcWatermark, uint64_t maxEvictionBatch, uint64_t minEvictionBatch, double highEvictionDelt )
@@ -124,6 +126,10 @@ void DynamicFreeThresholdStrategy::calculateBenefitMig(uint64_t acLatency, unsig
     auto currentBenefit = acBenefits[tid][pid][cid][0]; //current benefit
     acBenefits[tid][pid][cid][1] = currentBenefit; //update previous benefit
     acBenefits[tid][pid][cid][0] = 1.0 / acLatency; //calculate current benefit based on acLatency
+    std::ofstream ofs;
+    ofs.open ("test.txt", std::ofstream::out | std::ofstream::app);
+    ofs <<i++<<"\t"<< acBenefits[tid][pid][cid][0];
+    ofs <<"\n";
 }
 
 BackgroundStrategyStats DynamicFreeThresholdStrategy::getStats() { 
