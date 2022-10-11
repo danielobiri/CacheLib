@@ -135,7 +135,10 @@ struct Stats {
   std::map<uint32_t, uint64_t> backgroundEvictionClasses;
   std::map<uint32_t, uint64_t> backgroundPromotionClasses;
 
-  std::map<uint32_t, double> acHighWatermarks;
+  std::map<uint32_t, std::tuple<double, double, double>> acHighWatermarks;
+  std::map<uint32_t, std::pair<double, double>> acBenefits;
+  std::map<uint32_t, std::pair<double, double>> acLatencies;
+  std::vector<double>numEvictedItemsh;
   
   // errors from the nvm engine.
   std::unordered_map<std::string, double> nvmErrors;
@@ -385,9 +388,38 @@ struct Stats {
     if (!acHighWatermarks.empty() && backgndEvicStats.nEvictedItems > 0 ) {
       out << "== Class High Threshold ==" << std::endl;
       for (const auto& it : acHighWatermarks) {
-        out << it.first << "  :  " << it.second << std::endl;
+        //const& t = it.second
+        out << it.first << "  :  " << std::get<0>(it.second) <<"  :  " << std::get<1>(it.second) << "  :  " <<std::get<2>(it.second) << std::endl;
       }
     }
+     if (!acBenefits.empty() && backgndEvicStats.nEvictedItems > 0 ) {
+      out << "== Class Benefits ==" << std::endl;
+      for (const auto& it : acBenefits) {
+        out << it.first << "  :  " << it.second.first << " : " << it.second.second << std::endl;
+      }
+    }
+     if (!acLatencies.empty() && backgndEvicStats.nEvictedItems > 0 ) {
+      out << "== Class Latencies ==" << std::endl;
+      for (const auto& it : acLatencies) {
+        out << it.first << "  :  " << it.second.first << " : " << it.second.second << std::endl;
+      }
+    }
+    if (!numEvictedItemsh.empty() && backgndEvicStats.nEvictedItems > 0 ) {
+      out << "== numEvictedItems ==" << std::endl;
+      for (const auto& it : numEvictedItemsh) {
+        out << it<< std::endl;
+      }
+    }
+    
+    /*if (!acBenefits.empty() && backgndEvicStats.nEvictedItems > 0 ) {
+      auto end = acBenefits.begin();
+      std::advance(end, backgroundEvictionClasses.size());
+      out << "== Class Benefits ==" << std::endl;
+      for (auto it = acBenefits.begin(); it != end; it++) {
+        out << it->first << "  :  " << it->second << std::endl;
+      }
+    }
+    */
     
     if (!backgroundPromotionClasses.empty() && backgndPromoStats.nPromotedItems > 0) {
       out << "== Class Background Promotion Counters Map ==" << std::endl;

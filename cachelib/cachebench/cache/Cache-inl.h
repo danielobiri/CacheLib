@@ -615,6 +615,8 @@ Stats Cache<Allocator>::getStats() const {
   }
 
   ret.acHighWatermarks = cacheStats.evictionStats.strategyStats.highEvictionAcWatermarks;
+  ret.acBenefits = cacheStats.evictionStats.strategyStats.acBenefits;
+  ret.acLatencies = cacheStats.evictionStats.strategyStats.acLatencies;
   ret.backgroundEvictionClasses = cache_->getBackgroundEvictorClassStats();
   ret.backgroundPromotionClasses = cache_->getBackgroundPromoterClassStats();
 
