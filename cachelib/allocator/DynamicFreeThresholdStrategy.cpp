@@ -24,23 +24,31 @@
 #include "cachelib/allocator/CacheStats.h"
 #include <folly/logging/xlog.h>
 #include <fstream>
-
+#include <cmath> 
+#include <random>
+#include <stdlib.h> 
+#include <random>
 namespace facebook {
 namespace cachelib {
 
 
 
-int i = 0;
+
 DynamicFreeThresholdStrategy::DynamicFreeThresholdStrategy(double lowEvictionAcWatermark, double highEvictionAcWatermark, uint64_t maxEvictionBatch, uint64_t minEvictionBatch, double highEvictionDelt )
     : lowEvictionAcWatermark(lowEvictionAcWatermark), highEvictionAcWatermark(highEvictionAcWatermark), maxEvictionBatch(maxEvictionBatch), minEvictionBatch(minEvictionBatch), highEvictionDelta(highEvictionDelt), 
     highEvictionAcWatermarks(CacheBase::kMaxTiers, 
                                 std::vector<std::vector<std::vector<double>>>(MemoryPoolManager::kMaxPools,
                                 std::vector<std::vector<double>>(MemoryAllocator::kMaxClasses,
                                 std::vector<double>(3, highEvictionAcWatermark)))), //initialize highEvictionAcWatermarks
-    acBenefits(CacheBase::kMaxTiers, 
+    /*acBenefits(CacheBase::kMaxTiers, 
                   std::vector<std::vector<std::vector<double>>>(MemoryPoolManager::kMaxPools,
                   std::vector<std::vector<double>>(MemoryAllocator::kMaxClasses,
                   std::vector<double>(2, 0.0)))), //initialize acBenefits
+                  */
+    acLatencies(CacheBase::kMaxTiers, 
+                  std::vector<std::vector<std::vector<double>>>(MemoryPoolManager::kMaxPools,
+                  std::vector<std::vector<double>>(MemoryAllocator::kMaxClasses,
+                  std::vector<double>(2, 0.0)))),
     acToFreeMemPercents(CacheBase::kMaxTiers,
                         std::vector<std::vector<std::vector<double>>>(MemoryPoolManager::kMaxPools,
                         std::vector<std::vector<double>>(MemoryAllocator::kMaxClasses,
@@ -49,9 +57,11 @@ DynamicFreeThresholdStrategy::DynamicFreeThresholdStrategy(double lowEvictionAcW
 std::vector<size_t> DynamicFreeThresholdStrategy::calculateBatchSizes(const CacheBase& cache, std::vector<std::tuple<TierId, PoolId, ClassId>> acVec) {
   
   std::vector<size_t> batches{}; //contain number of items to evict for ac classes in the batch
+  
+ 
 
   for (auto [tid, pid, cid] : acVec) {
-
+  
     auto stats = cache.getAllocationClassStats(tid, pid, cid); //ac class stats
     auto acFree = stats.approxFreePercent; //amount of free memory in the ac class
 
@@ -66,41 +76,56 @@ std::vector<size_t> DynamicFreeThresholdStrategy::calculateBatchSizes(const Cach
       auto toFreeMemPercentAtIMinus1 = acToFreeMemPercents[tid][pid][cid][1]; //previous amount of memory to free up in the ac class
       auto acAllocLatencyNs = cache.getAllocationClassStats(tid, pid, cid).allocLatencyNs.estimate(); //moving avg latency estimation for ac class
       
-      calculateBenefitMig(acAllocLatencyNs, tid, pid, cid);
+      calculateLatency(acAllocLatencyNs, tid, pid, cid);
 
-      if (toFreeMemPercentAtIMinus1 < acFree / 2) { //if we evicted more in the previous period (IMinus1) then half of the current free memory space,
-        acHighThresholdAtINew -= highEvictionDelta; //then we would like to discourage eviction by lowering the high threshold to increase the usage of the memory capacity
-      } else {
-        //hill-climbing algorithm:
-        if (acBenefits[tid][pid][cid][0] > acBenefits[tid][pid][cid][1]) { //if the current benefit is greater than the previous benefit,
-          if (acHighThresholdAtIMinus1 > acHighThresholdAtIMinus2) { //and the high threshold increased in the previous period,
-            acHighThresholdAtINew += highEvictionDelta; //then we increase the high threshold again.
-          } else {
-            acHighThresholdAtINew -= highEvictionDelta; //else we decrease it.
-          }
-        } else {
-          if (acHighThresholdAtIMinus1 < acHighThresholdAtIMinus2) { //if the current benefit is less than the previous benefit AND the high threshold decreased in the prev. period,
-            acHighThresholdAtINew += highEvictionDelta; //then we increase the high threshold.
-          } else {
-            acHighThresholdAtINew -= highEvictionDelta; //else we decrease it.
-          }
+      
+      std::default_random_engine generator;
+      std::normal_distribution<double> distribution(1);
+      double number=distribution(generator);
+      acHighThresholdAtINew+= number*highEvictionDelta;
+      std::normal_distribution<double> randDistribution(0.0,1.0);
+      double randoNum=randDistribution(generator);
+      
+      if (acLatencies[tid][pid][cid][0] < acLatencies[tid][pid][cid][1]){ //if current latency reduced
+         // then increase threshold to increase eviction
+        //acHighThresholdAtINew+= number*highEvictionDelta;
+        highEvictionAcWatermarks[tid][pid][cid][0]=acHighThresholdAtINew;
+        highEvictionAcWatermarks[tid][pid][cid][1] = acHighThresholdAtI; 
+        highEvictionAcWatermarks[tid][pid][cid][2] = acHighThresholdAtIMinus1;
         }
-      }
+      //rand boundary, 
+      float diff = acLatencies[tid][pid][cid][0] - acLatencies[tid][pid][cid][1];
+      //calculate metropolis acceptance criterion
+      auto t = initial_latency / ( (float) tid + 1);
+      float metropolis = exp(-abs(diff) / t);
+		  if (diff < 0 || randoNum < metropolis){
+        //acHighThresholdAtINew-= number*highEvictionDelta;
+        highEvictionAcWatermarks[tid][pid][cid][0]=acHighThresholdAtINew;
+        highEvictionAcWatermarks[tid][pid][cid][1] = acHighThresholdAtI; 
+        highEvictionAcWatermarks[tid][pid][cid][2] = acHighThresholdAtIMinus1;
+        }
 
-      acHighThresholdAtINew = std::max(acHighThresholdAtINew, lowEvictionAcWatermark); // high threshold cannot be less than the low threshold
-                                                                                       //std::max(acHighThresholdAtINew, acFree)
-      auto toFreeMemPercent = acHighThresholdAtINew - acFree; //calculate amount of memory to free up in the ac class
+        acHighThresholdAtINew = std::max(acHighThresholdAtINew, lowEvictionAcWatermark); // high threshold cannot be less than the low threshold
+        auto CurrentItemsPercent=100-acFree;
+        auto toFreeMemPercent=CurrentItemsPercent-acHighThresholdAtINew;
+                                                                                   
+      
       acToFreeMemPercents[tid][pid][cid][1] = toFreeMemPercentAtI; //update acToFreeMemPercents
       acToFreeMemPercents[tid][pid][cid][0] = toFreeMemPercent; //update acToFreeMemPercents
+      
+
+      
+     
+
       auto toFreeItems = static_cast<size_t>(toFreeMemPercent * stats.memorySize / stats.allocSize); //calculate number of items to evict for current ac class
       batches.push_back(toFreeItems); //append batches
 
-      highEvictionAcWatermarks[tid][pid][cid][0] = acHighThresholdAtINew; //update highEvictionAcWatermarks
-      highEvictionAcWatermarks[tid][pid][cid][1] = acHighThresholdAtI; //update highEvictionAcWatermarks
-      highEvictionAcWatermarks[tid][pid][cid][2] = acHighThresholdAtIMinus1; //update highEvictionAcWatermarks
+  
+    
     }
-  }
-
+    
+    }
+  
   if (batches.size() == 0) {
     return batches;
   }
@@ -122,24 +147,36 @@ std::vector<size_t> DynamicFreeThresholdStrategy::calculateBatchSizes(const Cach
   return batches;
 }
 
-void DynamicFreeThresholdStrategy::calculateBenefitMig(uint64_t acLatency, unsigned int tid, PoolId pid, ClassId cid) {
-    auto currentBenefit = acBenefits[tid][pid][cid][0]; //current benefit
-    acBenefits[tid][pid][cid][1] = currentBenefit; //update previous benefit
-    acBenefits[tid][pid][cid][0] = 1.0 / acLatency; //calculate current benefit based on acLatency
-    std::ofstream ofs;
-    ofs.open ("test.txt", std::ofstream::out | std::ofstream::app);
-    ofs <<i++<<"\t"<< acBenefits[tid][pid][cid][0];
-    ofs <<"\n";
+
+  void DynamicFreeThresholdStrategy::calculateLatency(uint64_t acLatency, unsigned int tid, PoolId pid, ClassId cid){   
+ 
+    auto best_latency= acLatencies[tid][pid][cid][0];
+    acLatencies[tid][pid][cid][1]=best_latency;
+    acLatencies[tid][pid][cid][0]=acLatency;
+
+
+
 }
 
 BackgroundStrategyStats DynamicFreeThresholdStrategy::getStats() { 
     BackgroundStrategyStats s;
 
+   
+
     auto numClasses = MemoryAllocator::kMaxClasses;
     for (int i = 0; i < 1; i++) {
       for (int j = 0; j < 1; j++) {
         for (int k = 0; k < numClasses; k++) {
-            s.highEvictionAcWatermarks[k] = highEvictionAcWatermarks[i][j][k][0];
+          s.highEvictionAcWatermarks[k] =
+            std::make_tuple (
+                      highEvictionAcWatermarks[i][j][k][0],
+                      highEvictionAcWatermarks[i][j][k][1],
+                      highEvictionAcWatermarks[i][j][k][2]);
+          s.acLatencies[k]=
+          std::make_pair (
+                      acLatencies[i][j][k][0],
+                      acLatencies[i][j][k][1] );
+
         }
       }
     }

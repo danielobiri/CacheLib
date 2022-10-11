@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
@@ -18,6 +19,9 @@
 
 #include <algorithm>
 #include <numeric>
+#include <tuple>
+#include <utility>
+#include <list>
 
 #include "cachelib/allocator/Util.h"
 #include "cachelib/allocator/memory/MemoryAllocator.h"
@@ -304,13 +308,31 @@ struct ReaperStats {
 
 struct BackgroundStrategyStats {
   
-    std::map<uint32_t,double> highEvictionAcWatermarks;
+    std::map<uint32_t, std::tuple<double, double, double> > highEvictionAcWatermarks;
+    std::map<uint32_t,std::pair<double, double> > acBenefits;
+    std::map<uint32_t,std::pair<double, double> > acLatencies;
+    //std::map<uint32_t,double> numEvictedItemsh;
   
     BackgroundStrategyStats& operator+=(const BackgroundStrategyStats& rhs){
         for (const auto entry : rhs.highEvictionAcWatermarks) {
             auto cid = entry.first;
             auto count = entry.second;
             highEvictionAcWatermarks[cid] = count;
+        }
+        /*for (const auto entry : rhs.acBenefits) {
+            auto cid = entry.first;
+            auto count = entry.second;
+            acBenefits[cid] = count;
+        }
+        for (const auto entry : rhs.numEvictedItemsh) {
+            auto cid = entry.first;
+            auto count = entry.second;
+            numEvictedItemsh[cid] = count;
+        }*/
+        for (const auto entry : rhs.acLatencies) {
+            auto cid = entry.first;
+            auto count = entry.second;
+            acLatencies[cid] = count;
         }
         return *this;
     }
@@ -322,6 +344,8 @@ struct BackgroundEvictionStats {
   // the number of items this worker evicted by looking at pools/classes stats
   uint64_t numEvictedItems{0};
 
+  //std::map<uint32_t,double> numEvictedItemsh;
+
   // number of times we went executed the thread //TODO: is this def correct?
   uint64_t runCount{0};
 
@@ -332,9 +356,31 @@ struct BackgroundEvictionStats {
   uint64_t evictionSize{0};
 
   BackgroundStrategyStats strategyStats;
-
+  BackgroundStrategyStats s;
   BackgroundEvictionStats& operator+=(const BackgroundEvictionStats& rhs) {
+    
+    auto numEvictedItem = rhs.numEvictedItems;
+    
+
+    //numEvictedItemsh.push_back(numEvictedItem);
+    /*std::cout << numEvictedItem << "numEvictedItemsh" << '\n' << std::endl;
+
+    for (int k = 0; k < 18; k++){
+         s.numEvictedItemsh[k] = numEvictedItemsh;
+
+    } */
+
+ 
+
     numEvictedItems += rhs.numEvictedItems;
+    
+    //numEvictedItems = rhs.numEvictedItems;
+    /*for (const auto& it : numEvictedItems) {
+        
+        out << it.first << "  :  " << it.second << std::endl;
+      }
+      */
+
     runCount += rhs.runCount;
     totalClasses += rhs.totalClasses;
     evictionSize += rhs.evictionSize;
