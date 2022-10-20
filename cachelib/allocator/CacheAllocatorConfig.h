@@ -637,6 +637,7 @@ class CacheAllocatorConfig {
   bool delayCacheWorkersStart{false};
   
   // see MultiTierDataMovement.md
+  double highEvictionDelta{0.3};
   double promotionAcWatermark{4.0}; 
   double lowEvictionAcWatermark{2.0};
   double highEvictionAcWatermark{5.0};

@@ -262,6 +262,7 @@ struct CacheConfig : public JSONConfig {
 
   // See BackgroundMovers.md for complete description
   double promotionAcWatermark{4.0};
+  double highEvictionDelta{0.3};
   double lowEvictionAcWatermark{2.0};
   double highEvictionAcWatermark{5.0};
   double minAcAllocationWatermark{0.0};

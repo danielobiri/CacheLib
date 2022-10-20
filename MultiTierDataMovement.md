@@ -46,7 +46,7 @@ but it specifies how many candidates will be taken into consideration, not the a
 This option can be used to configure duration of critical section on LRU lock.
 
 
-### FreeThresholdStrategy (default)
+### DynamicFreeThresholdStrategy (default)
 
 - `lowEvictionAcWatermark`: Triggers background eviction thread to run
 when this percentage of the AllocationClass is free. 
