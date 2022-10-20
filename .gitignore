@@ -20,4 +20,7 @@ cachelib/external/gflags/
 cachelib/external/glog/
 cachelib/external/googletest/
 cachelib/external/sparsemap/
+opt/
 opt/cachelib/
+opt/cachelib/lib/libfolly
+opt/cachelib/lib/libcachelib_allocator.a
