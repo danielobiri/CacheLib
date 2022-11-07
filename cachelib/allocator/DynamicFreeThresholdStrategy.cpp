@@ -34,7 +34,7 @@ namespace cachelib {
 
 
 
-DynamicFreeThresholdStrategy::DynamicFreeThresholdStrategy(double lowEvictionAcWatermark, double highEvictionAcWatermark, uint64_t maxEvictionBatch, uint64_t minEvictionBatch, double highEvictionDelt )
+DynamicFreeThresholdStrategy::DynamicFreeThresholdStrategy(double lowEvictionAcWatermark, double highEvictionAcWatermark, uint64_t maxEvictionBatch, uint64_t minEvictionBatch, double highEvictionDelta )
     : lowEvictionAcWatermark(lowEvictionAcWatermark), highEvictionAcWatermark(highEvictionAcWatermark), maxEvictionBatch(maxEvictionBatch), minEvictionBatch(minEvictionBatch), highEvictionDelta(highEvictionDelta), 
     highEvictionAcWatermarks(CacheBase::kMaxTiers, 
                                 std::vector<std::vector<std::vector<double>>>(MemoryPoolManager::kMaxPools,
